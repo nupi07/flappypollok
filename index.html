@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Flappy Game</title>
+<style>
+    body {
+        margin: 0;
+        background: #70c5ce;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        touch-action: manipulation;
+    }
+    canvas {
+        background: #70c5ce;
+        display: block;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="game" width="360" height="640"></canvas>
+
+<!-- Sounds -->
+<audio id="hitSound" src="hit.wav"></audio>
+<audio id="gameOverSound" src="gameover.wav"></audio>
+
+<script>
+const gameOverImg = new Image();
+gameOverImg.src = "gameover.png";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+const playerImg = new Image();
+playerImg.src = "player.png";
+
+const pipeImg = new Image();
+pipeImg.src = "pipe.png";
+
+const hitSound = document.getElementById("hitSound");
+const gameOverSound = document.getElementById("gameOverSound");
+
+let gravity = 0.4;
+let jump = -8;
+let gameSpeed = 1.3;
+let gap = 260;
+let pipeWidth = 150;
+
+let bird = {
+    x: 60,
+    y: 200,
+    w: 100,
+    h: 100,
+    velocity: 0
+};
+
+let pipes = [];
+let score = 0;
+let gameOver = false;
+
+function resetGame() {
+    bird.y = 200;
+    bird.velocity = 0;
+    pipes = [];
+    score = 0;
+    gameOver = false;
+}
+
+function addPipe() {
+    let topHeight = Math.random() * 200 + 50;
+    pipes.push({
+        x: canvas.width,
+        top: topHeight,
+        bottom: topHeight + gap,
+        passed: false
+    });
+}
+
+function update() {
+    if (gameOver) return;
+
+    bird.velocity += gravity;
+    bird.y += bird.velocity;
+
+    if (bird.y + bird.h > canvas.height || bird.y < 0) {
+        endGame();
+    }
+
+    pipes.forEach(pipe => {
+        pipe.x -= gameSpeed;
+
+        if (
+    bird.x + 50 < pipe.x + pipeWidth &&
+    bird.x + bird.w - 50 > pipe.x &&
+    (bird.y + 50 < pipe.top || bird.y + bird.h - 50 > pipe.bottom)
+        ) {
+            hitSound.play();
+            endGame();
+        }
+
+        if (!pipe.passed && pipe.x + 50 < bird.x) {
+            pipe.passed = true;
+            score++;
+        }
+    });
+
+    pipes = pipes.filter(p => p.x > -60);
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(playerImg, bird.x, bird.y, bird.w, bird.h);
+
+   pipes.forEach(pipe => {
+
+    // Inverted top pipe
+    ctx.save();
+    ctx.translate(pipe.x + pipeWidth / 2, pipe.top);
+    ctx.scale(1, -1);
+    ctx.drawImage(pipeImg, -pipeWidth / 2, 0, pipeWidth, pipeImg.height);
+    ctx.restore();
+
+    // Bottom pipe
+    ctx.drawImage(pipeImg, pipe.x, pipe.bottom, pipeWidth, pipeImg.height);
+});
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "24px Arial";
+    ctx.fillText("Score: " + score, 20, 40);
+
+    if (gameOver) {
+
+    // Dark overlay
+    ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Game Over image
+    const imgWidth = 300;
+    const imgHeight = 150;
+
+    ctx.drawImage(
+        gameOverImg,
+        (canvas.width - imgWidth) / 2,
+        (canvas.height - imgHeight) / 2,
+        imgWidth,
+        imgHeight
+    );
+
+    // ⭐ PUT SCORE HERE ⭐
+    ctx.fillStyle = "#fff";
+    ctx.font = "48px Arial";
+    ctx.textAlign = "top";
+    ctx.fillText(
+        "Score: " + score,
+        canvas.width / 2,
+        (canvas.height / 2) - 20
+    );
+
+    // Restart text
+    ctx.font = "20px Arial";
+    ctx.fillText(
+        "Tap to Restart",
+        canvas.width / 2,
+        (canvas.height / 2) + imgHeight + 30
+    );
+
+    ctx.textAlign = "left"; // reset
+}
+}
+function loop() {
+    update();
+    draw();
+    requestAnimationFrame(loop);
+}
+
+function flap() {
+    if (gameOver) {
+        resetGame();
+        return;
+    }
+    bird.velocity = jump;
+}
+
+// Touch + Click support
+document.addEventListener("click", flap);
+document.addEventListener("touchstart", flap);
+
+// Pipe generation
+setInterval(() => {
+    if (!gameOver) addPipe();
+}, 2200);
+
+function endGame() {
+    if (!gameOver) {
+        gameOverSound.play();
+        gameOver = true;
+    }
+}
+
+loop();
+</script>
+
+</body>
+</html>
