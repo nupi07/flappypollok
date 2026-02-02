@@ -27,7 +27,8 @@
 <!-- Sounds -->
 <audio id="hitSound" src="hit.wav"></audio>
 <audio id="gameOverSound" src="gameover.wav"></audio>
-
+<audio id="bgMusic" src="background.wav" loop></audio>
+    
 <script>
 const gameOverImg = new Image();
 gameOverImg.src = "gameover.png";
@@ -43,7 +44,35 @@ pipeImg.src = "pipe.png";
 
 const hitSound = document.getElementById("hitSound");
 const gameOverSound = document.getElementById("gameOverSound");
+const bgMusic = document.getElementById("bgMusic");
 
+// Start background music when the page is ready
+window.addEventListener("load", () => {
+    bgMusic.volume = 0.3; // optional, lower volume
+    bgMusic.play().catch(() => {
+        // Autoplay might be blocked, will play on first user interaction
+    });
+});
+
+// Modify endGame function to stop bg music
+function endGame() {
+    if (!gameOver) {
+        bgMusic.pause();        // stop background music
+        bgMusic.currentTime = 0; // reset to start
+        gameOverSound.play();
+        gameOver = true;
+    }
+}
+
+// Optional: resume music on game restart
+function resetGame() {
+    bird.y = 200;
+    bird.velocity = 0;
+    pipes = [];
+    score = 0;
+    gameOver = false;
+    bgMusic.play(); // resume background music
+}
 let gravity = 0.4;
 let jump = -5;
 let gameSpeed = 1.3;
@@ -207,5 +236,6 @@ loop();
 
 </body>
 </html>
+
 
 
